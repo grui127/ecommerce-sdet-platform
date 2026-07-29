@@ -16,7 +16,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Configurar Node.js (Acción oficial corregida)
+      # 2. Configurar Node.js
       - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
@@ -31,11 +31,11 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
-      # 5. Levantar infraestructura Docker (WireMock + Order Service + Allure)
+      # 5. Levantar infraestructura Docker (Docker Compose V2)
       - name: Start Docker Services
         run: |
-          docker-compose -f docker/docker-compose.yml up -d --build
-          docker-compose -f docker/docker-compose.yml ps
+          docker compose -f docker/docker-compose.yml up -d --build
+          docker compose -f docker/docker-compose.yml ps
 
       # 6. Esperar a que WireMock y Order Service respondan (Health Check)
       - name: Wait for Services Healthcheck
@@ -69,4 +69,4 @@ jobs:
       # 10. Apagar contenedores Docker
       - name: Shutdown Docker Services
         if: always()
-        run: docker-compose -f docker/docker-compose.yml down
+        run: docker compose -f docker/docker-compose.yml down
