@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  wiremock:
+    image: wiremock/wiremock:3.3.1
+    container_name: ecommerce-wiremock
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./wiremock/mappings:/home/wiremock/mappings
+      - ./wiremock/__files:/home/wiremock/__files
+    entrypoint: ["/docker-entrypoint.sh", "--global-response-templating", "--verbose"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/__admin/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  order-service:
+    build:
+      context: ../mocks/order-service
+    container_name: ecommerce-order-service
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - PAYMENT_SERVICE_URL=http://wiremock:8080
+    depends_on:
+      wiremock:
+        condition: service_healthy
+
+  allure:
+    image: frankescobar/allure-docker-service:2.21.0
+    container_name: ecommerce-allure-report
+    ports:
+      - "5050:5050"
+    environment:
+      - CHECK_RESULTS_EVERY_SECONDS=3
+      - KEEP_HISTORY=1
+    volumes:
+      - ../allure-results:/app/allure-results

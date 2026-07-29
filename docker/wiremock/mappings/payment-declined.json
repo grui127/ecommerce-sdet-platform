@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/api/v1/payments/charge",
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$[?(@.cardNumber == '4532000000009999')]"
+      }
+    ]
+  },
+  "response": {
+    "status": 400,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "payment-declined.json"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/api/v1/payments/charge",
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$[?(@.amount > 0 && @.cardNumber == '4532000000001111')]"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "payment-success.json"
+  }
+}

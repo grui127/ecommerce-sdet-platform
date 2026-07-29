@@ -1,0 +1,6 @@
+{
+  "status": "DECLINED",
+  "errorCode": "INSUFFICIENT_FUNDS",
+  "message": "La transacción fue rechazada por saldo insuficiente.",
+  "timestamp": "2026-07-28T22:10:00Z"
+}

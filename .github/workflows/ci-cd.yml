@@ -1,0 +1,72 @@
+name: SDET E2E & Performance Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-and-verify:
+    name: Run Automated Test Suites
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout del código
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Configurar Node.js
+      - name: Setup Node.js Environment
+        uses: actions/request-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # 3. Instalar dependencias del proyecto
+      - name: Install Node Dependencies
+        run: npm ci
+
+      # 4. Instalar navegadores de Playwright
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      # 5. Levantar infraestructura Docker (WireMock + Order Service + Allure)
+      - name: Start Docker Services
+        run: |
+          docker-compose -f docker/docker-compose.yml up -d --build
+          docker-compose -f docker/docker-compose.yml ps
+
+      # 6. Esperar a que WireMock y Order Service respondan (Health Check)
+      - name: Wait for Services Healthcheck
+        run: |
+          echo "Esperando a que WireMock esté listo..."
+          timeout 30s bash -c 'until curl -f http://localhost:8080/__admin/health; do sleep 2; done'
+          echo "Esperando a que Order Service esté listo..."
+          timeout 30s bash -c 'until curl -f http://localhost:3001/health; do sleep 2; done'
+
+      # 7. Ejecutar Pruebas E2E & Integración con Playwright
+      - name: Run Playwright Tests
+        run: npx playwright test
+
+      # 8. Ejecutar Pruebas de Carga con Grafana k6 Docker
+      - name: Run k6 Performance Load Tests
+        run: |
+          docker run --rm \
+            --network="host" \
+            -v $(pwd)/tests/performance:/tests \
+            grafana/k6 run /tests/scn-checkout-load.js
+
+      # 9. Guardar Reporte de Playwright como Artefacto
+      - name: Upload Playwright HTML Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+      # 10. Apagar contenedores Docker
+      - name: Shutdown Docker Services
+        if: always()
+        run: docker-compose -f docker/docker-compose.yml down
