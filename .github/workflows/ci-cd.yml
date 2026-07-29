@@ -31,11 +31,13 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps chromium
 
-      # 5. Levantar infraestructura Docker (Docker Compose V2)
+      # 5. Levantar infraestructura Docker y ajustar permisos de Allure
       - name: Start Docker Services
         run: |
+          mkdir -p allure-results
           docker compose -f docker/docker-compose.yml up -d --build
           docker compose -f docker/docker-compose.yml ps
+          sudo chmod -R 777 allure-results
 
       # 6. Esperar a que WireMock y Order Service respondan (Health Check)
       - name: Wait for Services Healthcheck
